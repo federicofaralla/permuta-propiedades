@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Calculadora de Permuta de Propiedades</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --panel-2: #334155;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --accent-2: #22d3ee;
+    --good: #4ade80;
+    --bad: #f87171;
+    --lock: #fbbf24;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 {
+    margin: 0 0 8px;
+    font-size: 1.6rem;
+    font-weight: 600;
+  }
+  .subtitle {
+    color: var(--muted);
+    margin: 0 0 24px;
+    font-size: 0.95rem;
+  }
+  .anchor {
+    background: linear-gradient(135deg, #1e3a8a, #0c4a6e);
+    border: 1px solid #38bdf8;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .anchor-label {
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+  .anchor-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+  .anchor-input {
+    background: rgba(0,0,0,0.4);
+    border: 2px solid var(--accent);
+    color: var(--text);
+    font-size: 1.5rem;
+    font-weight: 700;
+    padding: 10px 16px;
+    border-radius: 8px;
+    width: 220px;
+    text-align: right;
+    font-family: inherit;
+  }
+  .anchor-input:focus { outline: none; border-color: var(--accent-2); }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 760px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+  .panel {
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid var(--panel-2);
+  }
+  .panel h2 {
+    margin: 0 0 16px;
+    font-size: 1.1rem;
+    color: var(--accent);
+  }
+  .panel.buy h2 { color: #f0abfc; }
+  .field { margin-bottom: 18px; }
+  .field-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .field-label {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .lock-btn {
+    background: transparent;
+    border: 1px solid var(--panel-2);
+    color: var(--muted);
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-family: inherit;
+    transition: all 0.15s ease;
+  }
+  .lock-btn:hover { border-color: var(--muted); color: var(--text); }
+  .lock-btn.locked {
+    background: var(--lock);
+    color: #1e293b;
+    border-color: var(--lock);
+    font-weight: 600;
+  }
+  .value-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .num-input {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--panel-2);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    width: 100%;
+    text-align: right;
+    font-family: inherit;
+  }
+  .num-input:focus { outline: none; border-color: var(--accent); }
+  .num-input.locked { background: rgba(251, 191, 36, 0.12); border-color: var(--lock); }
+  .num-input.computed { background: rgba(56, 189, 248, 0.08); border-color: rgba(56, 189, 248, 0.3); color: var(--accent-2); }
+  .pct-input { width: 90px !important; flex: 0 0 auto; }
+  input[type="range"] {
+    width: 100%;
+    margin-top: 8px;
+    accent-color: var(--accent);
+  }
+  input[type="range"]:disabled { opacity: 0.4; }
+  .commission-box {
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 6px;
+  }
+  .summary {
+    margin-top: 24px;
+    padding: 18px;
+    background: var(--panel);
+    border-radius: 12px;
+    border: 1px solid var(--panel-2);
+  }
+  .summary h3 {
+    margin: 0 0 12px;
+    font-size: 1rem;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 0.95rem;
+  }
+  .summary-row.total {
+    border-top: 1px solid var(--panel-2);
+    margin-top: 8px;
+    padding-top: 12px;
+    font-weight: 600;
+    font-size: 1.05rem;
+  }
+  .summary-value { color: var(--accent-2); font-variant-numeric: tabular-nums; }
+  .help {
+    margin-top: 16px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .badge {
+    display: inline-block;
+    background: var(--panel-2);
+    color: var(--muted);
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 6px;
+  }
+  .badge.computed-badge { background: rgba(56, 189, 248, 0.2); color: var(--accent-2); }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Calculadora de Permuta de Propiedades</h1>
+    <p class="subtitle">Ajustá los precios y comisiones manteniendo fija la plata que pone el comprador.</p>
+
+    <div class="anchor">
+      <div>
+        <div class="anchor-label">Plata que pone el comprador (fija)</div>
+        <div class="anchor-title">Diferencia entre venta y compra</div>
+      </div>
+      <div>
+        <span style="margin-right: 6px; font-size: 1.4rem; color: var(--accent);">USD</span>
+        <input type="text" inputmode="numeric" id="diff" class="anchor-input" value="50.000" />
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- VENTA -->
+      <div class="panel sell">
+        <h2>Propiedad que se VENDE</h2>
+
+        <div class="field">
+          <div class="field-header">
+            <span class="field-label">Precio de venta (USD)</span>
+            <button class="lock-btn" data-lock="sellPrice">Fijar</button>
+          </div>
+          <input type="text" inputmode="numeric" id="sellPrice" class="num-input" value="200.000" />
+          <input type="range" id="sellPriceSlider" min="0" max="2000000" step="1000" value="200000" />
+        </div>
+
+        <div class="field">
+          <div class="field-header">
+            <span class="field-label">Comisión de venta (%)</span>
+            <button class="lock-btn" data-lock="sellPct">Fijar</button>
+          </div>
+          <div class="value-row">
+            <input type="number" id="sellPct" class="num-input pct-input" value="3" step="0.1" min="0" />
+            <span style="color: var(--muted);">%</span>
+          </div>
+          <div class="commission-box">
+            <div class="summary-row">
+              <span class="field-label">Comisión en USD</span>
+              <span class="summary-value" id="sellCommUsd">— </span>
+            </div>
+            <div class="summary-row">
+              <span class="field-label">Neto que recibe</span>
+              <span class="summary-value" id="sellNet">— </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMPRA -->
+      <div class="panel buy">
+        <h2>Propiedad que se COMPRA</h2>
+
+        <div class="field">
+          <div class="field-header">
+            <span class="field-label">Precio de compra (USD)</span>
+            <button class="lock-btn" data-lock="buyPrice">Fijar</button>
+          </div>
+          <input type="text" inputmode="numeric" id="buyPrice" class="num-input" value="240.000" />
+          <input type="range" id="buyPriceSlider" min="0" max="2000000" step="1000" value="240000" />
+        </div>
+
+        <div class="field">
+          <div class="field-header">
+            <span class="field-label">Comisión de compra (%)</span>
+            <button class="lock-btn" data-lock="buyPct">Fijar</button>
+          </div>
+          <div class="value-row">
+            <input type="number" id="buyPct" class="num-input pct-input" value="3" step="0.1" min="0" />
+            <span style="color: var(--muted);">%</span>
+          </div>
+          <div class="commission-box">
+            <div class="summary-row">
+              <span class="field-label">Comisión en USD</span>
+              <span class="summary-value" id="buyCommUsd">— </span>
+            </div>
+            <div class="summary-row">
+              <span class="field-label">Costo total</span>
+              <span class="summary-value" id="buyTotal">— </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="summary">
+      <h3>Verificación</h3>
+      <div class="summary-row">
+        <span>Costo total compra (precio + comisión)</span>
+        <span class="summary-value" id="sumBuyTotal">—</span>
+      </div>
+      <div class="summary-row">
+        <span>Neto recibido por la venta (precio − comisión)</span>
+        <span class="summary-value" id="sumSellNet">—</span>
+      </div>
+      <div class="summary-row">
+        <span>Comisión total (venta + compra)</span>
+        <span class="summary-value" id="sumCommTotal">—</span>
+      </div>
+      <div class="summary-row total">
+        <span>Diferencia calculada</span>
+        <span class="summary-value" id="sumDiff">—</span>
+      </div>
+    </div>
+
+    <div class="help">
+      <strong>Cómo funciona:</strong> la Diferencia (USD que pone el comprador) está siempre fija con el valor que ingreses. Podés "Fijar" cualquier campo (precio o %) para que no se mueva. Cuando movés una barrita o cambiás un %, se recalcula automáticamente alguno de los campos NO fijados para que la ecuación se mantenga. Si fijás demasiados campos al mismo tiempo, la app destraba el último que ajustaste para poder seguir balanceando.
+    </div>
+  </div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+
+  const els = {
+    diff: $('diff'),
+    sellPrice: $('sellPrice'),
+    sellPriceSlider: $('sellPriceSlider'),
+    sellPct: $('sellPct'),
+    buyPrice: $('buyPrice'),
+    buyPriceSlider: $('buyPriceSlider'),
+    buyPct: $('buyPct'),
+    sellCommUsd: $('sellCommUsd'),
+    sellNet: $('sellNet'),
+    buyCommUsd: $('buyCommUsd'),
+    buyTotal: $('buyTotal'),
+    sumBuyTotal: $('sumBuyTotal'),
+    sumSellNet: $('sumSellNet'),
+    sumCommTotal: $('sumCommTotal'),
+    sumDiff: $('sumDiff'),
+  };
+
+  // Estado de candados. Diff siempre está "fijo" (es el ancla manual).
+  const locks = {
+    sellPrice: false,
+    sellPct: false,
+    buyPrice: false,
+    buyPct: false,
+  };
+
+  // Orden histórico: el último campo modificado por el usuario va al final.
+  // Cuando hay que destrabar uno, destrabamos el más viejo (el primero del array).
+  const lockOrder = []; // guarda los nombres en el orden en que se fijaron
+
+  // Formatea un entero con punto como separador de miles (formato es-AR).
+  const formatDots = n => {
+    if (!isFinite(n)) return '';
+    const sign = n < 0 ? '-' : '';
+    const abs = Math.abs(Math.round(n));
+    return sign + abs.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
+  // Parsea un string con puntos como separador de miles a número.
+  const parseDots = s => {
+    if (s == null) return 0;
+    const cleaned = String(s).replace(/[^\d-]/g, '');
+    const n = parseFloat(cleaned);
+    return isFinite(n) ? n : 0;
+  };
+
+  const fmt = n => {
+    if (!isFinite(n)) return '—';
+    return 'USD ' + formatDots(n);
+  };
+
+  function readState() {
+    return {
+      diff: parseDots(els.diff.value),
+      sellPrice: parseDots(els.sellPrice.value),
+      sellPct: parseFloat(els.sellPct.value) || 0,
+      buyPrice: parseDots(els.buyPrice.value),
+      buyPct: parseFloat(els.buyPct.value) || 0,
+    };
+  }
+
+  // Ecuación: diff = buyPrice * (1 + buyPct/100) - sellPrice * (1 - sellPct/100)
+  // Despejes:
+  function solveFor(target, s) {
+    const bp = s.buyPct / 100, sp = s.sellPct / 100;
+    if (target === 'buyPrice') {
+      const denom = 1 + bp;
+      if (denom === 0) return s.buyPrice;
+      return (s.diff + s.sellPrice * (1 - sp)) / denom;
+    }
+    if (target === 'sellPrice') {
+      const denom = 1 - sp;
+      if (denom === 0) return s.sellPrice;
+      return (s.buyPrice * (1 + bp) - s.diff) / denom;
+    }
+    if (target === 'buyPct') {
+      if (s.buyPrice === 0) return s.buyPct;
+      return ((s.diff + s.sellPrice * (1 - sp)) / s.buyPrice - 1) * 100;
+    }
+    if (target === 'sellPct') {
+      if (s.sellPrice === 0) return s.sellPct;
+      return (1 - (s.buyPrice * (1 + bp) - s.diff) / s.sellPrice) * 100;
+    }
+    return null;
+  }
+
+  function applyValue(field, value) {
+    if (field === 'diff') els.diff.value = formatDots(value);
+    else if (field === 'sellPrice') {
+      els.sellPrice.value = formatDots(value);
+      els.sellPriceSlider.value = clampSlider(els.sellPriceSlider, value);
+    }
+    else if (field === 'sellPct') els.sellPct.value = round2(value);
+    else if (field === 'buyPrice') {
+      els.buyPrice.value = formatDots(value);
+      els.buyPriceSlider.value = clampSlider(els.buyPriceSlider, value);
+    }
+    else if (field === 'buyPct') els.buyPct.value = round2(value);
+  }
+
+  function clampSlider(slider, v) {
+    const max = parseFloat(slider.max);
+    const min = parseFloat(slider.min);
+    if (v > max) {
+      // Auto-extender el slider si el valor lo excede
+      slider.max = Math.ceil(v / 100000) * 100000;
+    }
+    if (v < min) return min;
+    return Math.round(v);
+  }
+
+  function round2(n) { return Math.round(n * 100) / 100; }
+
+  // Recalcula manteniendo la ecuación. `changedField` es el campo que tocó el usuario
+  // (no se debe sobreescribir). Buscamos un campo no bloqueado distinto a éste para ajustarlo.
+  function rebalance(changedField) {
+    const s = readState();
+
+    // Candidatos a recalcular: campos no bloqueados y distintos al que se acaba de modificar.
+    // Prioridad: precio de compra > precio de venta > % compra > % venta.
+    const priority = ['buyPrice', 'sellPrice', 'buyPct', 'sellPct'];
+    let candidates = priority.filter(f => f !== changedField && !locks[f]);
+
+    if (candidates.length === 0) {
+      // No hay nada libre para ajustar. Destrabamos el lock más viejo (excluyendo el que recién se cambió).
+      const oldest = lockOrder.find(f => f !== changedField);
+      if (oldest) {
+        setLock(oldest, false);
+        candidates = [oldest];
+      } else {
+        // Caso extremo: solo se podría destrabar el changedField. No rebalanceamos.
+        updateUI();
+        return;
+      }
+    }
+
+    const target = candidates[0];
+    const val = solveFor(target, s);
+    if (val == null || !isFinite(val)) {
+      updateUI();
+      return;
+    }
+    // Si el valor es negativo y se trata de un precio, lo limitamos a 0.
+    let finalVal = val;
+    if ((target === 'buyPrice' || target === 'sellPrice') && finalVal < 0) finalVal = 0;
+    applyValue(target, finalVal);
+    updateUI(target);
+  }
+
+  function updateUI(computedField = null) {
+    const s = readState();
+    const sellComm = s.sellPrice * s.sellPct / 100;
+    const sellNet = s.sellPrice - sellComm;
+    const buyComm = s.buyPrice * s.buyPct / 100;
+    const buyTotal = s.buyPrice + buyComm;
+    const calcDiff = buyTotal - sellNet;
+
+    els.sellCommUsd.textContent = fmt(sellComm);
+    els.sellNet.textContent = fmt(sellNet);
+    els.buyCommUsd.textContent = fmt(buyComm);
+    els.buyTotal.textContent = fmt(buyTotal);
+    els.sumBuyTotal.textContent = fmt(buyTotal);
+    els.sumSellNet.textContent = fmt(sellNet);
+    els.sumCommTotal.textContent = fmt(sellComm + buyComm);
+    els.sumDiff.textContent = fmt(calcDiff);
+
+    // Marca visual de "computed" en el campo que ajustamos automáticamente.
+    ['sellPrice','sellPct','buyPrice','buyPct'].forEach(f => {
+      els[f].classList.toggle('computed', f === computedField && !locks[f]);
+    });
+
+    // Sliders disabled si el precio está fijado.
+    els.sellPriceSlider.disabled = locks.sellPrice;
+    els.buyPriceSlider.disabled = locks.buyPrice;
+
+    // Estilo de campos lockeados.
+    ['sellPrice','sellPct','buyPrice','buyPct'].forEach(f => {
+      els[f].classList.toggle('locked', locks[f]);
+    });
+  }
+
+  function setLock(field, value) {
+    locks[field] = value;
+    const btn = document.querySelector(`[data-lock="${field}"]`);
+    if (btn) {
+      btn.classList.toggle('locked', value);
+      btn.textContent = value ? 'Fijado ✓' : 'Fijar';
+    }
+    if (value) {
+      if (!lockOrder.includes(field)) lockOrder.push(field);
+    } else {
+      const i = lockOrder.indexOf(field);
+      if (i >= 0) lockOrder.splice(i, 1);
+    }
+  }
+
+  // --- Event listeners ---
+
+  // Reformatea un input USD con puntos preservando la posición del cursor.
+  function reformatUsdInput(input) {
+    const oldValue = input.value;
+    const cursor = input.selectionStart ?? oldValue.length;
+    // Cuántos dígitos hay antes del cursor en el valor anterior
+    const digitsBefore = oldValue.slice(0, cursor).replace(/\D/g, '').length;
+    const digits = oldValue.replace(/\D/g, '');
+    const formatted = digits ? formatDots(parseFloat(digits)) : '';
+    input.value = formatted;
+    // Reposiciona el cursor: avanza hasta encontrar la misma cantidad de dígitos
+    let newPos = 0, count = 0;
+    while (newPos < formatted.length && count < digitsBefore) {
+      if (/\d/.test(formatted[newPos])) count++;
+      newPos++;
+    }
+    try { input.setSelectionRange(newPos, newPos); } catch (e) {}
+  }
+
+  // Diff (ancla): al cambiarla rebalanceamos sin marcarla como "changed" (siempre está fija).
+  els.diff.addEventListener('input', () => {
+    reformatUsdInput(els.diff);
+    rebalance('diff'); // changedField = diff impide tocarla; recalcula otra cosa
+  });
+
+  // Inputs numéricos
+  const usdFields = new Set(['sellPrice', 'buyPrice']);
+  function bindNum(field) {
+    els[field].addEventListener('input', () => {
+      if (usdFields.has(field)) {
+        reformatUsdInput(els[field]);
+        const v = parseDots(els[field].value);
+        if (field === 'sellPrice') els.sellPriceSlider.value = clampSlider(els.sellPriceSlider, v);
+        if (field === 'buyPrice') els.buyPriceSlider.value = clampSlider(els.buyPriceSlider, v);
+      }
+      rebalance(field);
+    });
+  }
+  ['sellPrice','sellPct','buyPrice','buyPct'].forEach(bindNum);
+
+  // Sliders
+  els.sellPriceSlider.addEventListener('input', () => {
+    if (locks.sellPrice) return;
+    els.sellPrice.value = formatDots(parseFloat(els.sellPriceSlider.value) || 0);
+    rebalance('sellPrice');
+  });
+  els.buyPriceSlider.addEventListener('input', () => {
+    if (locks.buyPrice) return;
+    els.buyPrice.value = formatDots(parseFloat(els.buyPriceSlider.value) || 0);
+    rebalance('buyPrice');
+  });
+
+  // Lock buttons
+  document.querySelectorAll('[data-lock]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const field = btn.dataset.lock;
+      setLock(field, !locks[field]);
+      updateUI();
+    });
+  });
+
+  // Inicializa
+  updateUI();
+  // Primer rebalance para que la diff inicial se respete
+  rebalance('diff');
+})();
+</script>
+</body>
+</html>
